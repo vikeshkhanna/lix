@@ -20,7 +20,6 @@ class Comparator:
 	GTE = '>='
 	EQ = '='
 
-DEBUG = True
 OPERATORS = [Operator.AND, Operator.OR]
 COMPARATORS = [Comparator.LEQ, Comparator.LT, Comparator.GT, Comparator.GTE, Comparator.EQ]
 PARANS = ["(", ")"]
@@ -59,7 +58,7 @@ class TreeNode:
 		return str(self.node)
 
 # Main class to handle predicates. The user creates the predicate object with a condition (like, a>3 and b <5) and optionally an "apply" dictionary to convert
-# values in the predicates. For instance a < 5 => 5 is an int, and c=XYZ => XYZ is a string. So the dictionary would be {"a" : int, "c" : str}
+# values in the predicates. For instance a < 5 => 5 is an int, and c=XYZ => XYZ is a string. So the apply dictionary would be {"a" : int, "c" : str}
 # The user can then subsequently call the match function with the dictionary of actual values of the variables.
 class Predicate:
 	# @param condition : string representation of the logical infix expression
@@ -192,7 +191,6 @@ class Predicate:
 				i += 1
 
 		#print("End Stack", stack)
-
 		while len(stack) > 0:
 			op = stack.pop()
 
@@ -215,7 +213,6 @@ class Predicate:
 
 		return value
 
-		
 	# Infix printing of the Tree.
 	def print_tree(self, root):
 		if root!=None:
@@ -227,16 +224,18 @@ class Predicate:
 	def match_cmp(self, cmp_node, actual_value):
 		expected_value = cmp_node.value
 		#print("match_cmp=> ac, cmp, ex=>", actual_value, cmp_node.comparator, expected_value)
-		if cmp_node.comparator == Comparator.LEQ and actual_value <= expected_value:
-			return True
-		elif cmp_node.comparator == Comparator.LT and actual_value < expected_value:
-			return True
-		elif cmp_node.comparator == Comparator.GTE and actual_value >= expected_value:
-			return True
-		elif cmp_node.comparator == Comparator.GT and actual_value > expected_value:
-			return True
-		elif cmp_node.comparator == Comparator.EQ and actual_value == expected_value:
-			return True
+		if cmp_node.comparator == Comparator.LEQ:
+			return actual_value <= expected_value
+		elif cmp_node.comparator == Comparator.LT:
+			return actual_value < expected_value
+		elif cmp_node.comparator == Comparator.GTE:
+			return actual_value >= expected_value
+		elif cmp_node.comparator == Comparator.GT:
+			return actual_value > expected_value
+		elif cmp_node.comparator == Comparator.EQ:
+			return actual_value == expected_value
+		else:
+			raise Exception("Unsupported comparator")
 
 		return False
 

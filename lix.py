@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 '''
 @author: Vikesh Khanna
-Lix Tool is a command line interface for the LiX tests and experiments @LinkedIn.
+lix is a command line interface for the LiX tool @LinkedIn.
 '''
 
 import sys
@@ -73,6 +73,7 @@ if __name__== "__main__" :
 	# TODO: Proper apply dictionary.
 	if condition != None:
 		predicate = Predicate(condition)
+
 	for key in keys:
 		print(key)
 		experiment_url = get_experiment_url(fabric, key)
@@ -83,7 +84,6 @@ if __name__== "__main__" :
 
 		for i, experiment in enumerate(experiments):
 			if predicate != None and not predicate.match(experiment):
-				print("Failed match")
 				continue
 
 			print("Experiment: {0}".format(i + 1))
