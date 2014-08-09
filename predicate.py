@@ -68,7 +68,7 @@ class Predicate:
 	def __init__(self, condition, apply = {}):
 		self.apply = apply
 		self.root = self.make_tree(condition)
-		self.print_tree(self.root)
+		#self.print_tree(self.root)
 	
 	def make_tree(self, condition):
 		postfix = self.get_postfix(condition)
