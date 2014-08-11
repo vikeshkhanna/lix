@@ -37,8 +37,24 @@ class RandomNode:
 		self.left = None
 		self.right = None
 	
+
+def f_to_list(x):
+	return map(int, x)
+
 def get_rand_var():
 	return chr(ord('a') + random.randint(0, 25))
+
+def get_rand_list():
+	# Max 5 elements, each in range (1, 10)
+	n = random.randint(1, 5)
+	rand_list = []
+	for i in range(n):
+		rand_list.append(random.randint(1, 10))
+
+	return rand_list
+
+def get_rand_val():
+	return random.randint(1, MAXV)
 
 # Probability 
 def gen_tree(variables):
@@ -49,9 +65,19 @@ def gen_tree(variables):
 		# leaf node
 		comparator = random.choice(COMPARATORS)
 		key = get_rand_var()
-		value = random.randint(1, MAXV)
-		val = "{0}{1}{2}".format(key, comparator, value)
+		value = get_rand_val()
+		
+		# if this variable has already been used and has a "HAS" operator, make sure it is "HAS" again
+		if key in variables and variables[key] == f_to_list:
+			comparator = Comparator.HAS
+
+		val = "{0} {1} {2}".format(key, comparator, value)
+
 		variables[key] = int
+
+		if comparator == Comparator.HAS:
+			variables[key] = f_to_list
+
 		root = RandomNode(val)
 	else:
 		# operator node
@@ -77,7 +103,11 @@ def get_expr_from_tree(root):
 def get_rand_values(variables):
 	values = {}
 	for key in variables:
-		values[key] = random.randint(1, MAXV)
+		# If the comparator is HAS, generate a random list
+		if variables[key] == f_to_list:
+			values[key] = get_rand_list()
+		else:
+			values[key] = random.randint(1, MAXV)
 	
 	return values
 
@@ -86,8 +116,8 @@ def gen_expr():
 	root = gen_tree(variables)
 	return get_expr_from_tree(root), variables
 
-NUM_TESTS=15
-NUM_TRIES_PER_COND=5
+NUM_TESTS=100
+NUM_TRIES_PER_COND=10
 
 for i in range(NUM_TESTS):
 	print("Test# ", i+1)

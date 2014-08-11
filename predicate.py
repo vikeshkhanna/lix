@@ -19,13 +19,33 @@ class Comparator:
 	GT = '>'
 	GTE = '>='
 	EQ = '='
+	HAS = 'has'
+
+# Helper functions for common data conversion
+class ConvHelper:
+	# Converts string to boolean
+	@staticmethod
+	def f_to_bool(value):
+		if value.strip() == "True":
+			return True
+		elif value.strip() == "False":
+			return False
+		else:
+			raise Exception("Given value is not a valid boolean : {0}".format(value))
+	
+	# Converts string to date
+	# TODO: Implement.
+	@staticmethod
+	def f_to_date(value):
+		raise Exception("Not implemeneted (yet)")
 
 OPERATORS = [Operator.AND, Operator.OR]
-COMPARATORS = [Comparator.LEQ, Comparator.LT, Comparator.GT, Comparator.GTE, Comparator.EQ]
+COMPARATORS = [Comparator.LEQ, Comparator.LT, Comparator.GT, Comparator.GTE, Comparator.EQ, Comparator.HAS]
 PARANS = ["(", ")"]
 
 # Comparator Node.
 # For example, a > 5 => comparator is '>', Key is 'a', Value is '5'
+# my_list has hello-world => comparator is 'has', Key is 'my_list', Value is 'hello_world'
 class CmpNode:
 	def __init__(self, key, comparator, value):
 		self.type = Types.CMP
@@ -35,6 +55,27 @@ class CmpNode:
 
 	def __repr__(self):
 		return "CMP.{0}{1}{2}".format(self.comparator, self.key, self.value)
+	
+	def match(self, actual_value):
+		expected_value = self.value
+		#print("match_cmp=> ac, cmp, ex=>", actual_value, self.comparator, expected_value)
+		if self.comparator == Comparator.LEQ:
+			return actual_value <= expected_value
+		elif self.comparator == Comparator.LT:
+			return actual_value < expected_value
+		elif self.comparator == Comparator.GTE:
+			return actual_value >= expected_value
+		elif self.comparator == Comparator.GT:
+			return actual_value > expected_value
+		elif self.comparator == Comparator.EQ:
+			return actual_value == expected_value
+		elif self.comparator == Comparator.HAS:
+			return expected_value in actual_value
+		else:
+			raise Exception("Unsupported comparator")
+
+		return False
+
 
 # Operator Node
 # For example, "and" => operator is "and"
@@ -69,6 +110,26 @@ class Predicate:
 		self.root = self.make_tree(condition)
 		#self.print_tree(self.root)
 	
+	# UNTESTED
+	# Set the apply dictionary to the given value
+	# Apply dictionary maps keys to a conversion function. The conversion function is applied to the values in the condition before checking.
+	def set_apply(self, apply):
+		self.apply = apply
+		self.set_apply_inner(self.root)
+
+	# Apply a new conversion dictionary without traversing the tree again.
+	# NOTE that this function does not re-create tree. It traverses the tree and applies the new dictionary to each CmpNode
+	def set_apply_inner(self, root):
+		if root != None:
+			self.set_apply_inner(root.left)
+
+			if root.node.type == Types.CMP:
+				if root.node.key in self.apply:
+					root.node.value = self.apply[root.node.key](root.node.value)
+
+			self.set_apply_inner(root.right)
+		
+
 	def make_tree(self, condition):
 		postfix = self.get_postfix(condition)
 		return self.get_tree_from_postfix(postfix)
@@ -182,10 +243,10 @@ class Predicate:
 				else:
 					cmp, type, i = self.get_next_word(condition, i)
 					if type!=Types.CMP:
-						raise Exception("Malformed expression. Please use logical infix expressions.")
+						raise Exception("Malformed expression : {0}. Please use logical infix expressions.".format(condition))
 					val, type, i = self.get_next_word(condition, i)
 					if type!=Types.EXPR:
-						raise Exception("Malformed expression. Please use logical infix expressions.")
+						raise Exception("Malformed expression : {0}. Please use logical infix expressions.".format(condition))
 					postfix.append(CmpNode(word, cmp, self.get_proper_value(word, val)))
 			else:
 				i += 1
@@ -208,8 +269,8 @@ class Predicate:
 
 			try:
 				return func(value)
-			except:
-				raise Exception("Could not apply conversion function to value. function={0}, key={1}, value={2}".format(func, key, value))
+			except Exception as e:
+				raise Exception("Could not apply conversion function to value. function={0}, key={1}, value={2}, error={3}".format(func, key, value, str(e)))
 
 		return value
 
@@ -219,25 +280,6 @@ class Predicate:
 			self.print_tree(root.left)
 			print(root.node)
 			self.print_tree(root.right)
-
-	# Tests whether the actual key and value satisfy the predicate in the cmp_node
-	def match_cmp(self, cmp_node, actual_value):
-		expected_value = cmp_node.value
-		#print("match_cmp=> ac, cmp, ex=>", actual_value, cmp_node.comparator, expected_value)
-		if cmp_node.comparator == Comparator.LEQ:
-			return actual_value <= expected_value
-		elif cmp_node.comparator == Comparator.LT:
-			return actual_value < expected_value
-		elif cmp_node.comparator == Comparator.GTE:
-			return actual_value >= expected_value
-		elif cmp_node.comparator == Comparator.GT:
-			return actual_value > expected_value
-		elif cmp_node.comparator == Comparator.EQ:
-			return actual_value == expected_value
-		else:
-			raise Exception("Unsupported comparator")
-
-		return False
 
 	# Returns true if the given dictionary matches the condition.
 	# Dictionary is of the form { a : 3, b : 5, s: 4} where the condition is for the form (a>3 and b<4) or s=2 
@@ -255,7 +297,7 @@ class Predicate:
 				if key not in values:
 					raise Exception("Condition key not found in the dictionary: {0}".format(key))
 
-				return self.match_cmp(root.node, values[key])
+				return root.node.match(values[key])
 			else:
 			# OP Node. Returns the result of left and right sub-tree matches joined by the appropriate condition
 				left = self.match_inner(values, root.left)

@@ -20,6 +20,21 @@ def get_search_url(fabric, search_term):
 def get_experiment_url(fabric, key):
 	return "{0}/fabrics/{1}/tests/{2}/experiments".format(LIX_ROOT, fabric, key)
 
+# Returns the variable conversion map (or apply dictionary) for each experiment.
+# The apply dictionary maps every key in the condition to a function that is called before performing the predicate match. (See Predicate)
+# For instance, creation_date => apply date() function before checking < or >. 
+# Another example, tracking => apply bool before checking True / False
+def get_conv_map():
+	apply = {}
+	apply['tracking'] = ConvHelper.f_to_bool
+	# TODO: Use datetime functions instead of int. For now, use UNIX timestamps for comparing.
+	apply['pending_date'] = int
+	apply['creation_date'] = int
+	apply['activation_date'] = int
+	apply['id'] = int
+	apply['hash_id'] = int
+	return apply
+
 def usage():
 	help = "./lix.py -f <fabric> <search_term> [--filter \"condition\"]"
 	details_help = "Searches all the LiX tests for the given search_term. The search is a simple substring matching of the search_term within the test key. Returns all the experiments for the matched tests."
@@ -70,9 +85,9 @@ if __name__== "__main__" :
 
 	predicate = None
 	# Create the predicate, if condition is not None
-	# TODO: Proper apply dictionary.
 	if condition != None:
-		predicate = Predicate(condition)
+		apply = get_conv_map()
+		predicate = Predicate(condition, apply)
 
 	for key in keys:
 		print(key)
@@ -91,7 +106,7 @@ if __name__== "__main__" :
 			for key, value in experiment.iteritems():
 				print("{0}{1} --> {2}".format(space, key, value))
 
-		print("****** Experiment {0} ends *******".format(i+1))
+			print("****** Experiment {0} ends *******".format(i+1))
 
-		print("-----------------------")
+		print("--------- Key {0} ends --------------".format(key))
 		print("")
